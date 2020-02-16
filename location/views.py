@@ -19,28 +19,28 @@ import json
 #	data['city1'] = 'London'
 #	jdata  = json.dumps(data)
 #	return HttpResponse(jdata)
-	
+
+# Class for handling API request
 class get_locations(ListCreateAPIView):
+	# We need to serialize data from query result set to join data
     serializer_class = LocationSerializer
+	# pagination 10 results will be displayed.
     pagination_class = CustomPagination
     
+	# Method function for fetching results, We used Haversine formula to calculate results
     def get_queryset(self,lat,long):
        query = "select id, name, state_id, state_code, country_id, country_code, latitude, longitude, (6371 * acos( cos( radians(latitude) ) * cos(radians("+lat+") ) * cos(radians("+long+") - radians(longitude) ) + sin( radians(latitude) ) * sin( radians("+lat+") ) ) ) as distance from location_location order by distance LIMIT 10"
-       print(query)
        locations =  Location.objects.raw(query)
        return locations
 
-    # Get all movies
+    # Get all cities requests
     def get(self, request):
-        body = json.loads(request.body)
-        lat = body['latitude']
-        long = body['longitude']
-        print(lat,long)
-        locations = self.get_queryset(lat,long)
-        paginate_queryset = self.paginate_queryset(locations)
-        print(paginate_queryset)
-        serializer = self.serializer_class(paginate_queryset, many=True)
-        print("h5")
+        body = json.loads(request.body) # Data will be in request body only.
+        lat = body['latitude']  # Fetching latitude value
+        long = body['longitude'] # Fetching longitude value
+        locations = self.get_queryset(lat,long) # We are calling one of member function of class.
+        paginate_queryset = self.paginate_queryset(locations) # Pagination (Not needed)
+        serializer = self.serializer_class(paginate_queryset, many=True) # Response conversion
         temp = self.get_paginated_response(serializer.data)
-        print("h6")
+		# Just storing the data in a temp, not now but in future we may need to apply some validation on this, so i am storing it separately.  
         return temp
